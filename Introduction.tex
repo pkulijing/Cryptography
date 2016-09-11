@@ -1,0 +1,98 @@
+\ifx\PREAMBLE\undefined
+\input{preamble}
+\begin{document}
+\fi
+\chapter{Introduction}
+\section{Course Overview}
+The main objectives of this course are 
+\begin{itemize}
+\item Learn how cryptographic primitives work;
+\item Learn how to use them correctly and reason about security.
+\end{itemize}
+By the end of the course we will be able to reason about the security of cryptography constructions and break ones that are not secure. 
+
+Cryptography is used everywhere.
+\begin{description}
+\item[Secure communication] Web traffic: https. Wireless traffic: 802.11i WPA2, GSM, Bluetooth.
+\item[Encrypting files on disk] EFS, TrueCrypt
+\item[Content protection(e.g. DVD, blue ray)] CSS(Content Scrambling System), AACS
+\item[User authentication]
+\end{description}
+
+Secure communication is concerned about a laptop ``Alice'' trying to communicate with a web server ``Bob''
+\footnote{Alice and Bob are two nicknames that will be used in the course}. The protocol used is HTTP, or to say SSL(Secure Sockets Layer)/TLS(Transport Layer Security). The goal is to make sure that as data travels across the network, an attacker can neither eavesdrop on or tamper the data. It consists of two parts: 
+\begin{itemize}
+\item Handshake protocol: establish a shared secret key using public-key cryptography;
+\item Record layer: transmit data using this shared secret key, with confidentiality and integrity ensured.
+\end{itemize}
+
+Storing encrypted files on disk is actually logically the same as protecting communication: encrypting files on disk is essentially securing the communication between ``Alice today'' and ``Alice tomorrow''. 
+
+The building block of secure communication is symmetric encryption. A message $m$ is encrypted by a cipher using a shared key $k$ into a cipher text $c=E(k,m)$, and this cipher text is deciphered back to the message: $m=D(k,c)$. The encryption algorithm $E$ and the decryption algorithm $D$ are publicly known. Proprietary ciphers should not be used for security reasons.
+
+We will discuss two use cases of symmetric encryption. A single use key is used to encrypt only one message, while a multi use key is used to encrypt multiple messages. 
+
+Cryptography is a tremendous tool serving as the basis for many security mechanisms. Nonetheless, it is not the solution to all security problems. Software bugs can cause security problems unsolvable using cryptography. Neither can cryptography prevent us from social engineering attacks. Moreover, cryptography is not reliable unless implemented and used properly. It is not something we try to invent ourselves. 
+
+\section{What is Cryptography}
+As stated in the previous section, the core of cryptography consists of two steps: secret key establishment and secure communication using the secret key. But cryptography does much more than that. We will provide a few examples here. 
+\subsubsection{Digital Signature}
+Digital signature is the analog of the signature in the physical world. In the digital world, signatures cannot be the same for different documents. Rather, digital signature is a function of the content beings signed. Simply copying the signature on one document onto another one will result in failure of verification.
+\subsubsection{Anonymous Communication}
+Anonymous communication over the Internet can be established with a commonly used mechanism called ``mix net''. Bob has no idea whom he is talking to when Alice contacts him anonymously, yet he can still send responses to Alice.
+\subsubsection{Anonymous Digital Cash}
+The use of digital cash is concerned with two problems: how to spend a ``digital coin'' without anyone knowing who I am, and how to prevent double spending. There seems to be a paradox between anonymity and security. Roughly speaking, anonymous digital cash is used in such a way that when used once, no one knows who used it, whilst once used twice, the identity of the user gets exposed. 
+\subsubsection{Protocols}
+In a election, we may hope to design a system that reveals the winner of the election without exposing individual voting choices. In a private auction, it is ideal that only the winner and the 2$^{nd}$ highest bid is outputted by the auction center. These are actually examples of a more general problem called secure multi-party computation. It aims at calculating a target function $f(x_i)$ without exposing individual inputs $x_i$.
+\subsubsection{``Crypto Magic''}
+Privately outsourcing computation: send an encrypted query to Google, and Google can compute on the encrypted query and send back results without knowing content of the query.
+
+Zero knowledge proof: convince someone else that we have solved a problem without exposing the solution to him. 
+
+Cryptography is a rigorous science. Every concept that we will describe is going to follow three steps: 
+\begin{enumerate}
+\item Precisely specify the threat model;
+\item Propose a construction;
+\item Prove that breaking the construction under the threat model is equivalent to solving an underlying hard problem.
+\end{enumerate}
+\section{History of Cryptography}
+We will provide a few historical ciphers, all of which are now badly broken. 
+\subsubsection{Substitution Cipher}
+Cipher a piece of text by substituting each letter with another letter, i.e. encrypt messages by shuffling the alphabet. An example of substitution cipher is the Caesar cipher. It shifts the alphabet by 3 positions, i.e. $a\rightarrow d, b\rightarrow e$, etc. 
+
+There are 26! possible keys for a substitution cipher, which is a fairly large key space. However it can be easily broken with letter frequencies. Being vulnerable to the worst possible attack, namely a cipher text only attack, it should not be the choice of any serious secure communication.
+\subsubsection{Vigener Cipher}
+A cipher dating back to 16$^{th}$-century Rome. Given a key word, for example ``crypto''. Repeat the word enough times until reaching the length of the message, then add the long key with the message numerically to obtain the cipher text. It can also be broken with letter frequencies. 
+\subsubsection{Rotor Machines}
+A cipher invented during the electric era, i.e. the 19$^{th}$ century. The most famous one was the Enigma.
+\subsubsection{Data Encryption Standard}
+A post-WWII cipher with a key space of size $2^{56}$, which was large enough then but is too small today. 
+\section{Discrete Probability}
+The whole theory of cryptography is built upon the knowledge of discrete probability. This section serves as a quick recap of discrete probability.
+
+Discrete probability is always defined on a finite set called the \textbf{universe}. In this course we will always use the set $U=\{0,1\}^n$, i.e. the set of all $n$-bit binary strings.
+\begin{definition}
+A \textbf{probability distribution} $P$ is a function from $U$ to [0,1] such that $\sum\limits_{x\in U}P(x)=1$.
+\end{definition}
+\begin{definition}
+A subset of the universe $A\subseteq U$ is called an \textbf{event}. The probability of the event is $Pr(A)=\sum\limits_{x\in A}P(x)\in[0,1]$.
+\end{definition}
+\begin{definition}
+A \textbf{random variable} is a function $X:U\rightarrow V$. $X$ take values in $V$ and defines a distribution on $V$.
+\end{definition}
+\begin{definition}
+Events $A$ and $B$ are \textbf{independent} if $Pr(A\land B)=Pr(A)\cdot Pr(B)$.
+\end{definition}
+
+An important property of XOR will be frequently used in this course.
+\begin{theorem}\textbf{(Property of XOR)}
+Suppose we have a random variable $Y$ and a uniform variable $X$ independent from $Y$ on $\{0,1\}^n$, then the XOR of $X$ and $Y$ $Z\coloneqq X\oplus Y$ is a uniform variable on $\{0,1\}^n$.
+\end{theorem}
+
+The birthday paradox is an interesting topic that we will talk about in detail later.
+\begin{theorem}\textbf{(The Birthday Paradox)}
+Let $r_i\in U(i=1,\dots,n)$ be independent identically distributed variables. If $n\geq 1.2\times\lvert U\rvert^{1/2}$, then $$Pr(\exists i\neq j\:s.t.\:r_i=r_j)\geq\frac{1}{2}.$$
+\end{theorem}
+\ifx\PREAMBLE\undefined
+\end{document}
+\fi
