@@ -136,7 +136,41 @@ Two distributions $P_1$ and $P_2$ over $\{0,1\}^n$ are \textbf{computationally i
 \end{definition}
 According to this definition, a PRG is secure if $\{k\xleftarrow{R}\mathcal{K}:G(k)\}\approx_p uniform(\{0,1\}^n).$
 \section{Semantic Security}
+In order to claim that a stream cipher using a secure PRG is secure, we have to define what it means for a stream cipher to be secure. In the context of stream ciphers, we assume that an attacker is only capable of obtaining one cipher text. We introduced the concept of perfect secrecy, and revealed that it is a requirement too high to be met in practice. Perfect secrecy requires that $\forall m_0,m_1\in\mathcal{M}$ with equal length, the probability distribution of $E(k,m_0)$ is the same as that of $E(k,m_1)$ for $k\leftarrow\mathcal{K}$. A looser requirement would be that they be computationally indistinguishable, which is unfortunately still too strict in practice. Instead of putting the requirement upon arbitrary choices of $m_0$ and $m_1$, we only need $E(k,m_0)$ and $E(k,m_1)$ to be computationally indistinguishable for $m_0$ and $m_1$ that can be exhibited explicitly by an adversary. 
 
+Suppose that an adversary $A$ exhibits two messages $m_0,m_1\in\mathcal{M}$ with equal length, and a challenger (the cipher being challenged) takes both messages and outputs the cipher text for one of them: $c=E(k,m_b)$, in which $b$ is either 0 or 1. The adversary will guess whether the result is the encryption of $m_0$ or $m_1$. Let $EXP(b)$ represent an experiment in which the encryption of $m_b$ is outputted, and define $W_b$ as the event $EXP(b)=1$, i.e. the adversary guessing that $c$ is the encryption of $m_1$. 
+\begin{definition}\textbf{(Semantic Security Advantage)}
+With the notations above, the \textbf{semantic security advantage} of the adversary $A$ against the cipher is defined as 
+\[Adv_{SS}[A,E]=\left\lvert Pr[W_0]-Pr[W_1]\right\rvert.\]
+\end{definition}
+Even if only one bit of the plain text can be deduced from the cipher text, the cipher will have SS advantage 1. OTP has SS advantage 0 because $Pr[W_0]=Pr[W_1]$ always holds due to perfect secrecy.
+\begin{definition}\textbf{(Semantic Security)}
+A cipher $E$ is \textbf{semantically secure} if for all efficient $A$, $Adv_{SS}[A,E]$ is negligible.
+\end{definition}
+
+\begin{theorem}
+Given a secure PRG $G:\mathcal{K}\rightarrow\{0,1\}^n$, a stream cipher $E$ derived from $G$ is semantically secure. 
+\end{theorem} 
+\begin{proof}
+We are going to prove the theorem by proving that $\forall$ semantic security adversary $A$, $\exists$ PRG adversaries (i.e. a statistical tests) $B_0,B_1$ s.t.
+\[Adv_{SS}[A,E]\leq Adv_{PRG}[B_0,G]+Adv_{PRG}[B_1,G]\]
+Since $Adv_{PRG}[B_b,G]$ is negligible (guaranteed by the security of $G$), $Adv_{SS}[A,E]$ will be negligible, which indicates the semantic security of $E$. 
+
+For a PRG adversary $B$, we have 
+\[Adv_{PRG}[B,G]=\left\lvert\mathop{Pr}\limits_{r\leftarrow\{0,1\}^n}[B(r)=1]-\mathop{Pr}\limits_{k\leftarrow\mathcal{K}}[B(G(k))=1]\right\rvert.\]
+
+Consider such statistical tests $B_b$ with a built-in SS adversary $A$. When $A$ exhibits two messages $m_0,m_1$, what $B_b$ does is to use the output of $A$ for the input $m_b\oplus y$ as its own output for any input $y$, i.e.
+\[B_b(y)=A(m_b\oplus y).\]
+Hence $\mathop{Pr}\limits_{k\leftarrow\mathcal{K}}[B_b(G(k))=1]=\mathop{Pr}\limits_{k\leftarrow\mathcal{K}}[A(m_b\oplus G(k))=1]=Pr[W_b].$ Similarly, $\mathop{Pr}\limits_{r\leftarrow\{0,1\}^n}[B_b(r)=1]=Pr[R_b],$ in which $R_b$ is defined similarly as $W_b$, but for an OTP. In summary we have 
+\[Adv_{PRG}[B_b,G]=\left\lvert Pr[R_b]-Pr[W_b]\right\rvert.\]
+Due to the perfect secrecy of OTP, we have $Pr[R_0]=Pr[R_1]$. Thus
+\begin{align*}
+Adv_{SS}[A,E]&=\left\lvert Pr[W_0]-Pr[W_1]\right\rvert\\
+&=\left\lvert Pr[W_0]-Pr[R_0]+Pr[R_1]-Pr[W_1]\right\rvert\\
+&\leq\left\lvert Pr[W_0]-Pr[R_0]\right\rvert+\left\lvert Pr[W_1]-Pr[R_1]\right\rvert\\
+&=Adv_{PRG}[B_0,G]+Adv_{PRG}[B_1,G].
+\end{align*}
+\end{proof}
 \ifx\PREAMBLE\undefined
 \end{document}
 \fi
