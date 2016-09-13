@@ -32,7 +32,7 @@ in which $k$ is uniform in $\mathcal{K}: k\xleftarrow{R}\mathcal{K}.$
 \end{definition}
 This definition means that an attacker cannot tell if the message is $m_0, m_1$ or any other message with equal length given only the cipher text. Thus nothing can be learnt about the message from the cipher text, and the cipher is safe from CT-only attack. 
 
-Since $k=c\oplus m$ for OTP, we have $Pr(E(k,m)=c)=\frac{1}{\lvert\mathcal{K}\rvert},\forall k$. Hence OTP has perfect secrecy. Nonetheless, the key has to be as long as the message, which makes OTP impractical in actual use. 
+Since $k=c\oplus m$ for OTP, we have $Pr(E(k,m)=c)=\frac{1}{\lvert\mathcal{K}\rvert},\forall c,m$. Hence OTP has perfect secrecy. Nonetheless, the key has to be as long as the message, which makes OTP impractical in actual use. 
 
 Unfortunately, it can be proved that a cipher with perfect secrecy must satisfy $\lvert\mathcal{K}\rvert>\lvert\mathcal{M}\rvert$, which means the length of the key is at least as long as that of the message. So such ciphers are actually hard to use in practice.
 \section{Stream Ciphers}
