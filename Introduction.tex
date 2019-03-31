@@ -20,7 +20,7 @@ Cryptography is used everywhere.
 \end{description}
 
 Secure communication is concerned about a laptop ``Alice'' trying to communicate with a web server ``Bob''
-\footnote{Alice and Bob are two nicknames that will be used in the course}. The protocol used is HTTP, or to say SSL(Secure Sockets Layer)/TLS(Transport Layer Security). The goal is to make sure that as data travels across the network, an attacker can neither eavesdrop on or tamper the data. It consists of two parts: 
+\footnote{Alice and Bob are two nicknames that will be used in the course}. The protocol used is HTTPS, or to say SSL(Secure Sockets Layer)/TLS(Transport Layer Security). The goal is to make sure that as data travels across the network, an attacker can neither eavesdrop on or tamper the data. It consists of two parts: 
 \begin{itemize}
 \item Handshake protocol: establish a shared secret key using public-key cryptography;
 \item Record layer: transmit data using this shared secret key, with confidentiality and integrity ensured.
@@ -39,22 +39,23 @@ As stated in the previous section, the core of cryptography consists of two step
 \subsubsection{Digital Signature}
 Digital signature is the analog of the signature in the physical world. In the digital world, signatures cannot be the same for different documents. Rather, digital signature is a function of the content beings signed. Simply copying the signature on one document onto another one will result in failure of verification.
 \subsubsection{Anonymous Communication}
-Anonymous communication over the Internet can be established with a commonly used mechanism called ``mix net''. Bob has no idea whom he is talking to when Alice contacts him anonymously, yet he can still send responses to Alice.
+Anonymous communication over the Internet can be established with a commonly used mechanism called ``mix net''. Bob has no idea to whom he is talking when Alice contacts him anonymously, yet he can still respond to Alice.
 \subsubsection{Anonymous Digital Cash}
 The use of digital cash is concerned with two problems: how to spend a ``digital coin'' without anyone knowing who I am, and how to prevent double spending. There seems to be a paradox between anonymity and security. Roughly speaking, anonymous digital cash is used in such a way that when used once, no one knows who used it, whilst once used twice, the identity of the user gets exposed. 
 \subsubsection{Protocols}
 In a election, we may hope to design a system that reveals the winner of the election without exposing individual voting choices. In a private auction, it is ideal that only the winner and the 2$^{nd}$ highest bid is outputted by the auction center. These are actually examples of a more general problem called secure multi-party computation. It aims at calculating a target function $f(x_i)$ without exposing individual inputs $x_i$.
 \subsubsection{``Crypto Magic''}
-Privately outsourcing computation: send an encrypted query to Google, and Google can compute on the encrypted query and send back results without knowing content of the query.
-
-Zero knowledge proof: convince someone else that we have solved a problem without exposing the solution to him. 
-
+\begin{itemize}
+\item Privately outsourcing computation: send an encrypted query to Google, and Google can compute on the encrypted query and send back results without knowing content of the query.
+\item Zero knowledge proof: convince someone else that we have solved a problem without exposing the solution to him. 
+\end{itemize}
 Cryptography is a rigorous science. Every concept that we will describe is going to follow three steps: 
 \begin{enumerate}
 \item Precisely specify the threat model;
 \item Propose a construction;
 \item Prove that breaking the construction under the threat model is equivalent to solving an underlying hard problem.
 \end{enumerate}
+
 \section{History of Cryptography}
 We will provide a few historical ciphers, all of which are now badly broken. 
 \subsubsection{Substitution Cipher}
@@ -77,21 +78,41 @@ A \textbf{probability distribution} $P$ is a function from $U$ to [0,1] such tha
 \begin{definition}
 A subset of the universe $A\subseteq U$ is called an \textbf{event}. The probability of the event is $Pr(A)=\sum\limits_{x\in A}P(x)\in[0,1]$.
 \end{definition}
+\begin{theorem}(\textbf{The Union Bound})
+\[Pr(A_1 \cup A_2)\le Pr(A_1)+Pr(A_2)\]
+\end{theorem}
 \begin{definition}
-A \textbf{random variable} is a function $X:U\rightarrow V$. $X$ take values in $V$ and defines a distribution on $V$.
+A \textbf{random variable} is a function $X:U\rightarrow V$. $X$ takes values in $V$ and defines a distribution on $V$.
 \end{definition}
+\begin{definition}A \textbf{uniform random variable} over $U$, denoted as $r\xleftarrow{\text{R}} U$, has the property that 
+\[Pr(r = a)=\frac{1}{\lvert U\rvert}\]
+for all $a\in U$.
+\end{definition}
+
+A deterministic algorithm obtains the same result every time as long as the input is the same:$y\leftarrow A(m)$, whereas a randomized algorithm that takes an implicit argument sampled anew each time obtains a different result each time with the same input: $y\leftarrow A(m;r),\text{ where } r\xleftarrow{R}\{0,1\}^n$. Actually the output of a randomized algorithm can be thought of as a random variable: $y\xleftarrow{R}A(m)$.
+
 \begin{definition}
-Events $A$ and $B$ are \textbf{independent} if $Pr(A\land B)=Pr(A)\cdot Pr(B)$.
+Events $A$ and $B$ are \textbf{independent} if \
+\[Pr(A\land B)=Pr(A)\cdot Pr(B)\]
 \end{definition}
 
 An important property of XOR will be frequently used in this course.
 \begin{theorem}\textbf{(Property of XOR)}
 Suppose we have a random variable $Y$ and a uniform variable $X$ independent from $Y$ on $\{0,1\}^n$, then the XOR of $X$ and $Y$ $Z\coloneqq X\oplus Y$ is a uniform variable on $\{0,1\}^n$.
 \end{theorem}
+\begin{proof}(for $n$=1)
+\begin{equation*}
+\begin{split}
+Pr(Z=0) &=Pr(X=0)\cdot Pr(Y=0) + Pr(X=1)\cdot Pr(Y=1)\\
+        &=\frac{1}{2}\left(Pr(X=0) + Pr(X=1)\right)=\frac{1}{2}
+\end{split}
+\end{equation*}
+\end{proof}
 
 The birthday paradox is an interesting topic that we will talk about in detail later.
 \begin{theorem}\textbf{(The Birthday Paradox)}
-Let $r_i\in U(i=1,\dots,n)$ be independent identically distributed variables. If $n\geq 1.2\times\lvert U\rvert^{1/2}$, then $$Pr(\exists i\neq j\:s.t.\:r_i=r_j)\geq\frac{1}{2}.$$
+Let $r_i\in U(i=1,\dots,n)$ be independent identically distributed variables. If $n\geq 1.2\times\lvert U\rvert^{1/2}$, then 
+\[Pr(\exists i\neq j\:s.t.\:r_i=r_j)\geq\frac{1}{2}\]
 \end{theorem}
 \ifx\PREAMBLE\undefined
 \end{document}
