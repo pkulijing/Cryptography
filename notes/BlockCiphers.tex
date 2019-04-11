@@ -16,31 +16,35 @@ Typically block ciphers are slower than stream ciphers. But block ciphers are ca
 \begin{definition}\textbf{(PRF)}
 A \textbf{pseudo random function (PRF)} is a function defined over $(K,X,Y)$:
 \[F:K\times X\rightarrow Y\]
-such that there exists an efficient algorithm to evaluate $F(k,x)$. 
+such that there exists an  \textbf{efficient} algorithm to evaluate $F(k,x)$. 
 \end{definition}
 \begin{definition}\textbf{(PRP)}
 A \textbf{pseudo random permutation (PRP)} is a function defined over $(K,X,X)$:
 \[E:K\times X\rightarrow X\]
 such that 
 \begin{itemize}
-\item There exists an efficient deterministic algorithm to evaluate $F(k,x)$;
-\item The function $F(k,\cdot)$ is one-to-one, i.e. it's invertible;
-\item There exists an efficient inversion algorithm $D(k,y)$.
+\item There exists an \textbf{efficient} deterministic algorithm to evaluate $E(k,x)$;
+\item The function $E(k,\cdot)$ is one-to-one, i.e. it's invertible;
+\item There exists an \textbf{efficient} inversion algorithm $D(k,y)$.
 \end{itemize}
 \end{definition}
-Let $F:K\times X\rightarrow Y$ be a PRF. Let $Funs[X,Y]$ represent the set of all functions from $X$ to $Y$, and $S_F$ represent the set of $F(k,\cdot)$ with $k\in K$. Obviously $S_F\subseteq Funs[X,Y]$.
+
+A PRP is a PRF in which $X=Y$ and $F$ is efficiently invertible once $k$ is fixed. PRP captures accurately and syntactically what a block cipher is. AES is a PRP defined on
+$K=X=\{0,1\}^{128}$. 3DES is a PRP defined on $K=\{0,1\}^{168}, X=\{0,1\}^{64}$. 
+
+Let $F:K\times X\rightarrow Y$ be a PRF. Let $Funs[X,Y]$ represent the set of all functions from $X$ to $Y$ ($card(Funs[X,Y])=\lvert Y\rvert^{\lvert X\rvert}$), and $S_F$ represent the set of $F(k,\cdot)$ with $k\in K$($card(S_F)=card(K)$). Obviously $S_F\subseteq Funs[X,Y]$.
 \begin{definition}\textbf{(Secure PRFs)}
 We call $F$ a \textbf{secure PRF} if a random function from $Funs[X,Y]$ is indistinguishable from a random function from $S_F$.
 \end{definition}
 From a secure PRF $F:K\times \{0,1\}^n\rightarrow\{0,1\}^n$, we can easily construct a secure PRG $G:K\times\{0,1\}^{nt}$:
 \[G(k)=F(k,0)\parallel F(k,1)\parallel\dots\parallel F(k,t).\]
-A great property of this PRG is that it is parallelizable. We will prove its correctness later.
+A great property of this PRG is that it is computationally parallelizable. We will prove its correctness later.
 \section{Data Encryption Standard (DES)}
 In order to specify a block cipher, we need to provide the key expansion mechanism and the round function. DES will be used as an example in this section.
 \subsection{Feistel Network}
 The core idea behind DES is \textbf{Feistel network}. Its goal is to build an invertible function $F:\{0,1\}^{2n}\rightarrow\{0,1\}^{2n}$ from $n$ arbitrary (not necessarily invertible!) functions $f_1,f_2,\dots,f_d:\{0,1\}^n\rightarrow\{0,1\}^n$. The initial input contains two parts $R_0$ and $L_0$, each $n$ bits. Then we have 
 \begin{equation*}\begin{cases}
-R_i&=L_{i-1}\oplus f_i(R_0)\\
+R_i&=L_{i-1}\oplus f_i(R_{i-1})\\
 L_i&=R_{i-1}
 \end{cases}\end{equation*}
 for $i=1,2,\dots,d$, as shown in Figure \ref{feistel}. $R_d,L_d$ are taken as the output. 
@@ -53,7 +57,7 @@ for $i=1,2,\dots,d$, as shown in Figure \ref{feistel}. $R_d,L_d$ are taken as th
 It is easy to construct its inverse:
 \begin{equation*}\begin{cases}
 R_{i-1}&=L_i\\
-L_{i-1}&=f(L_i)\oplus R_i
+L_{i-1}&=f_i(L_i)\oplus R_i
 \end{cases}\end{equation*}
 for $i=d,\dots,1$. Feistel network is used in many block ciphers, but not in AES.
 
@@ -77,7 +81,7 @@ DES is essentially a 16-round Feistel network. It uses 16 functions $F(k_i,x)=f_
 \subsection{DES Round Function}
 Let's now discuss the round function $F(k_i,x)$. It carries out the following steps.
 \begin{enumerate}
-\item Pass the 32-bit input $x$ to an expansion box $E$, which expands it to 48 bits $x'$ by simple replications of bits.
+\item Pass the 32-bit input $x$ to an expansion box $E$, which expands it to 48 bits $x'$ by simply replicating and moving bits (i.e. linear operation that can be represented by a matrix)
 \item Compute $x'\oplus k_i$ ($k_i$ is also 48 bits).
 \item Break $x'\oplus k_i$ into 8 6-bit groups.
 \item Each 6-bit group goes through an $S$ box and gets mapped to 4 bits.
@@ -93,11 +97,38 @@ The $S$ boxes are $\{0,1\}^6\rightarrow\{0,1\}^4$ functions implemented as looku
 
 The choice of these functions is subtle. For example, linear functions 
 \[S_i(\vec{x})=A_i\cdot\vec{x}\pmod 2\]
-with $A_i$ being a $4\times 6$ matrix are bad choices. The reason is that we can then find a $64\times 832$ matrix $B$ such that 
-\[DES(k,m)=B\cdot\begin{pmatrix}m&k_1&\cdots&k_{16}\end{pmatrix}^{\mathsf{T}}=c,\]
+with $A_i$ being a $4\times 6$ matrix are bad choices. One example could be 
+\[\begin{pmatrix}
+0 & 1 & 1 & 0 & 0 & 0 \\
+1 & 0 & 0 & 1 & 1 & 0 \\
+1 & 0 & 0 & 0 & 0 & 1 \\
+0 & 1 & 1 & 0 & 0 & 1
+\end{pmatrix}\cdot\begin{pmatrix}
+x_1\\
+x_2\\
+x_3\\
+x_4\\
+x_5\\
+x_6
+\end{pmatrix} \pmod 2=\begin{pmatrix}
+x_2\oplus x_3\\
+x_1\oplus x_4 \oplus x_5\\
+x_1\oplus x_6\\
+x_2\oplus x_3\oplus x_6
+\end{pmatrix}\]
+The reason is that we can then find a $64\times 832$\footnote{832 = 64 + 48 * 16} matrix $B$ such that 
+\begin{align*}
+DES(k,m)&=B\cdot\begin{pmatrix}m&k_1&\cdots&k_{16}\end{pmatrix}^{\mathsf{T}}\coloneqq B\cdot\begin{pmatrix}m\\\mathcal{K}\end{pmatrix}\\
+&=m_{i_1}\oplus\cdots\oplus m_{i_n}\oplus \mathcal{K}_{j_1}\oplus\cdots\oplus \mathcal{K}_{j_k},
+\end{align*}
 i.e DES as a whole becomes linear. Then we have 
-\[DES(k,m_1)\oplus DES(k,m_2)\oplus DES(k,m_3)=DES(k,m_1\oplus m_2\oplus m_3,\]
-which is not a property that holds for a random function, and thus makes our DES insecure. What's worse, all round keys can be extracted given 832 $m-c$ pairs.
+\begin{align*}
+ &DES(k,m_1)\oplus DES(k,m_2)\oplus DES(k,m_3)\\
+=&B\cdot\begin{pmatrix}m_1\\\mathcal{K}\end{pmatrix}\oplus B\cdot\begin{pmatrix}m_2\\\mathcal{K}\end{pmatrix}\oplus  B\cdot\begin{pmatrix}m_3\\\mathcal{K}\end{pmatrix}\\
+=&B\cdot\begin{pmatrix}m_1\oplus m_2\oplus m_3\\\mathcal{K}\end{pmatrix}\\
+=&DES(k,m_1\oplus m_2\oplus m_3),
+\end{align*}
+which is not a property that holds for a random function, and thus makes DES insecure. What's worse, all round keys can be extracted given 832 $m-c$ pairs.
 
 It has been proven that even choosing the $S$ boxes and $P$ box at random will result in an insecure block cipher. There are a lot of rules limiting the choices in order to guarantee the security of DES.
 \section{Attacks on DES}
@@ -112,7 +143,7 @@ Then $\forall m,c$,
 \begin{proof}
 \begin{align*}
 &Pr(\exists k'\neq k\:s.t.\:c=DES(k,m)=DES(k',m))\\
-\leq&\sum\limits_{k'}Pr(DES(k',m)=DES(k,m))\\
+\leq&\sum\limits_{k'\in\{0,1\}^{56}}Pr(DES(k',m)=c)\\
 =&2^{56}\cdot\frac{1}{2^{64}}=\frac{1}{256}
 \end{align*}
 \end{proof}
@@ -129,7 +160,7 @@ The reason to use 3DES instead of 2DES is that 2DES is breakable with less time 
 Given a $m-c$ pair, we have 
 $E(k_1,E(k_2,m))=c$, therefore $D(k_1,c)=E(k_2,m)$, which inspires us of a new way to break the cipher, namely the meet-in-the-middle attack. 
 
-First we calculate $E(k_i,m)$ for all $2^{56}$ possible keys and save them in a table. Then we sort the table according to the value of $E(k_i,m)$. Finally for each possible $k_i$, we calculate $D(k_i,c)$ and search for it in the table. Building and sorting the table takes $2^{56}\log(2^56)$ time. Searching takes another $2^56\log(2^{56})$ time. In total the time consumption is smaller than $2^63\ll 2^112$, making 2DES insecure.
+First we calculate $E(k_i,m)$ for all $2^{56}$ possible keys and save them in a table. Then we sort the table according to the value of $E(k_i,m)$. Finally for each possible $k_i$, we calculate $D(k_i,c)$ and search for it in the table. Building and sorting the table takes $2^{56}\log(2^{56})$ time. Searching for all the decryptions takes another $2^{56}\log(2^{56})$ time. In total the time consumption is smaller than $2^{63}\ll 2^{112}$, making 2DES insecure.
 
 The same strategy can be used to break 3DES in $2^{118}$ time:
 \[2^{56}\log(2^{56})+2^{56\times 2}\log(2^{56})=2^{118}.\]
