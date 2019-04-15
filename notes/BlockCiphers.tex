@@ -62,7 +62,7 @@ L_{i-1}&=f_i(L_i)\oplus R_i
 for $i=d,\dots,1$. Feistel network is used in many block ciphers, but not in AES.
 
 The following theorem is important in the theory of DES. 
-\begin{theorem}
+\begin{theorem}(Luby-Rackoff)\label{lubyrackoff}
 If $f:K\times\{0,1\}^n\rightarrow\{0,1\}^n$ is a secure PRF, then a 3-round Feistel Network (Figure \ref{3rfeistel}) $F:K^3\times\{0,1\}^{2n}\rightarrow\{0,1\}^{2n}$ is a secure PRP.
 \end{theorem}
 \begin{figure}[ht]
@@ -199,6 +199,70 @@ f(k)=\begin{cases}
 0&otherwise
 \end{cases}\end{equation*}
 This means that a quantum search algorithm can find the key in $O(\sqrt{\lvert K\rvert})$ time. For DES this means $2^{28}$ time. 
+
+\section{Advanced Encryption Standard(AES)}
+AES is built as a substitution-permutation network (Figure \ref{aes_network}). In each round, the input is first XOR'ed with a round key, then goes through a substitution layer in which blocks of the state are substituted according to the substitution table, and finally goes through a permutation in which bits are permuted and shuffled around. Every step must be reversible so that the whole algorithm is reversible. The decryption process is simply all the steps taken in reverse order. Specifically, Figure \ref{aes128} shows the process of AES 128 encryption.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{AES_network.jpg}
+\caption{AES Subs-Perm Network}\label{aes_network}
+\end{figure}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{aes128.jpg}
+\caption{AES 128 Schematic}\label{aes128}
+\end{figure}
+
+The 16-byte input is written as a 4$\times$4 matrix $A$. The first function $ByteSub$ is just a 1-byte S-box that maps a byte to another:
+\[A[i,j]\rightarrow S[A[i,j]],\forall i,j.\]
+The second function $Shiftrow$ does a cyclic shift on each row:
+\begin{equation*}
+\begin{bmatrix}
+  S_{00} & S_{01} & S_{02} & S_{03} \\ 
+  S_{10} & S_{11} & S_{12} & S_{13} \\ 
+  S_{20} & S_{21} & S_{22} & S_{23} \\ 
+  S_{30} & S_{31} & S_{32} & S_{33} \\ 
+\end{bmatrix}\Rightarrow
+\begin{bmatrix}
+  S_{00} & S_{01} & S_{02} & S_{03} \\ 
+  S_{11} & S_{12} & S_{13} & S_{10} \\ 
+  S_{22} & S_{23} & S_{20} & S_{21} \\ 
+  S_{33} & S_{30} & S_{31} & S_{32} \\ 
+\end{bmatrix}.
+\end{equation*}
+The third function $MixColumn$ applies a linear function on each column. All 3 steps are easily computable, allowing AES to be implemented with no pre-computation (thus small code size). There is a tradeoff between code size and performance: the smaller the code size, the slower the implementation is. The javascript AES lib makes use of this fact to accelerate both code transmission through web and local computation in the browser: code with no pre-computation is transmitted from server to the browser, and pre-compute tables are computed prior to encryption.
+
+Two types of attacks are known to exist for AES: the best key recovery attack on AES-128 (4 times faster than brute-force search, $2^{126}$) and the related key attack on AES-256 (much faster than brute-force search, $2^{99}$). 
+\section{Block Ciphers from PRGs}
+Let $G:K\rightarrow K^2(G(k)=G(k)[0]\parallel G(k)[1]$) be a PRG, and define a 1-bit PRF $F:K\times\{0,1\}\rightarrow K$ as 
+\[F(k,x)=G(k)[x], x\in\{0,1\}.\]
+Then obviously we have
+\begin{theorem}
+If $G$ is a secure PRG, then $F$ is a secure PRF.
+\end{theorem}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.5\textwidth]{prg2prf_g1.jpg}
+\caption{PRG to PRF on $\{0,1\}^2$}\label{prg2prf_g1}
+\end{figure}
+$G,F$ can be extended to get $G_1:K\rightarrow K^4, F_1:K\times\{0,1\}^2\rightarrow K$, as shown in Figure \ref{prg2prf_g1}. The security of $G_1$ can be proved according to the security of $G$.
+\begin{align*}
+G_1(k)&=G(G(k)[0])\parallel G(G(k)[1])\\
+F_1(k, x)&=G_1(k)[x]
+\end{align*}
+
+We can extend more and more to obtain a secure PRF(the GGM PRF) on $K\times\{0,1\}^n$.
+\begin{align*}
+\begin{cases}
+  k_1&=G(k)[x_0]\\
+k_2&=G(k1)[x_1]\\
+&\cdots\\
+k_n&=G(k_{n-1})[x_{n-1}]\\
+\end{cases}\\
+F(k,x_0x_1\cdots x_{n-1})=k_n\\
+\end{align*}
+According to Theorem \ref{lubyrackoff}, a $2n$ bit PRP can be obtained from the PRF, thus a block cipher can be defined. This secure PRF and the block cipher it defines is not used in practice because it is too slow ($n$ times slower than the original PRG).
 \ifx\PREAMBLE\undefined
 \end{document}
 \fi
