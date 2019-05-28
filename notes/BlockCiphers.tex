@@ -263,6 +263,81 @@ k_n&=G(k_{n-1})[x_{n-1}]\\
 F(k,x_0x_1\cdots x_{n-1})=k_n\\
 \end{align*}
 According to Theorem \ref{lubyrackoff}, a $2n$ bit PRP can be obtained from the PRF, thus a block cipher can be defined. This secure PRF and the block cipher it defines is not used in practice because it is too slow ($n$ times slower than the original PRG).
+\begin{lemma}
+\textbf{PRF Switching Lemma}
+Let $E$ be a PRP over $(K,X)$, then for any $q$-query adversary $A$,
+\[\left\lvert Adv_{PRP}[A,E]-Adv_{PRF}[A,E]\right\rvert<\frac{q^2}{2|X|},\]
+i.e. as long as $|X|$ is large enough, a secure PRP is also a secure PRF.
+\end{lemma}
+\section{Using Block Ciphers: One-Time Keys}
+\begin{itemize}
+\item adversary's ability: sees only one cipher text (one-time key)
+\item adversary's goal: learn info about plain text from cipher text
+\end{itemize}
+
+\subsection{Incorrect Use: Electronic Code Book}
+A common incorrect use of a block cipher is \textbf{electronic code book}: divide the message into blocks and encrypt each block independently ($E(m_i) = c_i$). Obviously $c_1 = c_2$ when $m_1=m_2$. It is not semantically secure: $m_0$ = \texttt{HelloHello} and $m_1$ = \texttt{HelloWorld} would be enough to tell it from a random function (suppose block size = 5).
+\subsection{Deterministic Counter Mode}
+Deterministic counter mode generates a stream cipher from a block cipher (i.e. a PRF) $F$.
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{detctr.jpg}
+  \caption{Deterministic Counter Mode}\label{detctr}
+\end{figure}
+
+\section{Using Block Ciphers: Many-Time Keys}
+\begin{itemize}
+  \item adversary's ability: \textbf{chosen-plaintext attack (CPA)}. Can obtain the encryption of arbitrary messages of his choice (by providing the same message twice in a semantic security challenge)
+  \item adversary's goal: break semantic security
+\end{itemize}
+
+If a cipher always outputs the same cipher text for a given message $m$, then it is insecure under CPA. In a semantic security challenge, the adversary can do as such:
+\begin{itemize}
+  \item Round 1: provide $m, m$ to obtain $c$ the ciphertext of $m$
+  \item Round 2: provide $m, m_1$, if obtain $c$: output 0; otherwise output 1
+\end{itemize}
+\subsection{CPA Security}
+\subsubsection{Randomized Encryption}
+$E(k,m)$ is a randomized algorithm. Encrypting the same msg twice gives different cipher texts. The cipher text must be longer than the plain text. Roughly speaking, length of CT = length of PT + \#random bits. If the PT is quite long, the overhead is negligible. But if PT itself is short, the overhead would become a problem.
+\subsubsection{Nonce-Based Encryption}
+\begin{itemize}
+\item Encryption: $E(k, m, n) = c$
+\item Decryption: $D(k, c, n) = m$
+\end{itemize}
+Nonce $n$ is a value that changes from value to value so that the pair $(k,n)$ is never used more than once. It does not have to be random.
+
+The nonce can be a counter (packet number). It can be used when the encryptor keeps a state from msg to msg, and it does not have to be sent together with the CT if the decryptor keeps the same state. It can also be chosen at random from a large enough space $N$, in which the encryptor does not have to maintain any state.
+
+The system should be secure when the nonce is chosen by the adversary. But the adversary has  to choose a different nonce each time.
+\subsection{Cipher Block Chain}
+Let $E,D$ be a PRP. Choose a random $IV\in X$ (IV = initialization vector) with the same length as a cipher block, and do the following:
+\[c[0]=E(k, IV\oplus m[0])\]
+\[c[i]=E(k, c[i-1]\oplus m[i]), i\ge 1\]
+The CT is one block longer than the PT because it includes the IV. To decrypt the CT, we have
+\[m[0]=D(k, c[0])\oplus IV\]
+\[m(i)=D(k, c[i])\oplus c[i-1], i\ge 1\]
+\begin{theorem}\textbf{CBC Theorem}
+For any $L>0$, if $E$ is a secure PRP over $(K,X)$, then $E_{CBC}$ is semantically secure cipher under CPA over $(K, X^L, X^{L+1})$. In particular, for a $q-$query adversary $A$ attacking $E_{CBC}$, there exists a PRP adverdary $B$ such that
+\[Adv_{CPA}[A, E_{CBC}]\le Adv_{PRP}(B, E)+\frac{2q^2L^2}{|X|}\]
+\end{theorem}
+The theorem means that CBC is only secure when $q^2L^2\ll |X|$. $q$ is number of messages encrypted with $k$, and $L$ is max length of the message (in blocks). 
+
+It is crucial that the IV be random for each message. If the IV can be predicted, CBC is not CPA secure. If a non-random nonce is used instead of a random IV, it has to be encrypted with a distinct key $k_1$ before being used in place of the IV.
+\subsection{Randomized Counter Mode}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{randomctrmode.jpg}
+  \caption{Randomized Counter Mode}\label{randomctrmode}
+\end{figure}
+
+Randomized counter mode is superior to CBC in every aspect:
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ctrcbccomp.jpg}
+  \caption{Randomized Counter Mode v.s. CBC}\label{ctrcbccomp}
+\end{figure}
+
 \ifx\PREAMBLE\undefined
 \end{document}
 \fi
